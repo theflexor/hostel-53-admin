@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://109.205.178.197:8080/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
 // Types based on OpenAPI schema
 export interface BookingDto {
