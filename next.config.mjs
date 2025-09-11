@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: "/hostel-admin",
   eslint: {
     ignoreDuringBuilds: true,
   },
