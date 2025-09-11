@@ -10,8 +10,21 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Bed, Users, MapPin, CheckCircle, XCircle, Loader2, AlertTriangle } from "lucide-react"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  CalendarIcon,
+  Bed,
+  Users,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+} from "lucide-react"
 import { format } from "date-fns"
 import { ru } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -59,14 +72,18 @@ export function CreateBookingForm() {
   const [availableBunks, setAvailableBunks] = useState<AvailableBunksDto[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingBunks, setLoadingBunks] = useState(false)
-  const [priceCalculation, setPriceCalculation] = useState<PriceCalculationDto | null>(null)
+  const [priceCalculation, setPriceCalculation] =
+    useState<PriceCalculationDto | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setError(null)
-        const [roomsData, categoriesData] = await Promise.all([apiService.getRooms(), apiService.getAllCategories()])
+        const [roomsData, categoriesData] = await Promise.all([
+          apiService.getRooms(),
+          apiService.getAllCategories(),
+        ])
         setRooms(roomsData)
         setCategories(categoriesData)
       } catch (error) {
@@ -89,12 +106,23 @@ export function CreateBookingForm() {
   }, [formData.roomId, formData.checkIn, formData.checkOut])
 
   useEffect(() => {
-    if (formData.roomId && formData.selectedBunkIds.length > 0 && formData.checkIn && formData.checkOut) {
+    if (
+      formData.roomId &&
+      formData.selectedBunkIds.length > 0 &&
+      formData.checkIn &&
+      formData.checkOut
+    ) {
       calculatePrice()
     } else {
       setPriceCalculation(null)
     }
-  }, [formData.roomId, formData.selectedBunkIds, formData.guests, formData.checkIn, formData.checkOut])
+  }, [
+    formData.roomId,
+    formData.selectedBunkIds,
+    formData.guests,
+    formData.checkIn,
+    formData.checkOut,
+  ])
 
   const loadAvailableBunks = async () => {
     if (!formData.roomId || !formData.checkIn || !formData.checkOut) return
@@ -103,7 +131,11 @@ export function CreateBookingForm() {
     try {
       const startTime = formData.checkIn.toISOString()
       const endTime = formData.checkOut.toISOString()
-      const bunks = await apiService.getAvailableBunks(formData.roomId, startTime, endTime)
+      const bunks = await apiService.getAvailableBunks(
+        formData.roomId,
+        startTime,
+        endTime
+      )
       setAvailableBunks(bunks)
     } catch (error) {
       console.error("Failed to load available bunks:", error)
@@ -119,7 +151,13 @@ export function CreateBookingForm() {
   }
 
   const calculatePrice = async () => {
-    if (!formData.roomId || formData.selectedBunkIds.length === 0 || !formData.checkIn || !formData.checkOut) return
+    if (
+      !formData.roomId ||
+      formData.selectedBunkIds.length === 0 ||
+      !formData.checkIn ||
+      !formData.checkOut
+    )
+      return
 
     try {
       const selectedRoom = rooms.find((r) => r.id === formData.roomId)
@@ -136,7 +174,7 @@ export function CreateBookingForm() {
         formData.selectedBunkIds.length,
         formData.guests,
         checkInDate,
-        checkOutDate,
+        checkOutDate
       )
       setPriceCalculation(priceData)
     } catch (error) {
@@ -152,7 +190,12 @@ export function CreateBookingForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.roomId || formData.selectedBunkIds.length === 0 || !formData.checkIn || !formData.checkOut) {
+    if (
+      !formData.roomId ||
+      formData.selectedBunkIds.length === 0 ||
+      !formData.checkIn ||
+      !formData.checkOut
+    ) {
       toast({
         title: "Ошибка",
         description: "Заполните все обязательные поля",
@@ -231,7 +274,12 @@ export function CreateBookingForm() {
                 <Input
                   id="firstName"
                   value={formData.firstName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, firstName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      firstName: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
@@ -240,7 +288,12 @@ export function CreateBookingForm() {
                 <Input
                   id="lastName"
                   value={formData.lastName}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, lastName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      lastName: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
@@ -252,7 +305,9 @@ export function CreateBookingForm() {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, email: e.target.value }))
+                  }
                   required
                 />
               </div>
@@ -261,20 +316,27 @@ export function CreateBookingForm() {
                 <Input
                   id="phone"
                   value={formData.phone}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, phone: e.target.value }))
+                  }
                   required
                 />
               </div>
             </div>
             <div>
-              <Label htmlFor="guests">Количество гостей</Label>
+              <Label htmlFor="guests">Количест��о гостей</Label>
               <Input
                 id="guests"
                 type="number"
                 min="1"
                 max="10"
                 value={formData.guests}
-                onChange={(e) => setFormData((prev) => ({ ...prev, guests: Number.parseInt(e.target.value) || 1 }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    guests: Number.parseInt(e.target.value) || 1,
+                  }))
+                }
               />
             </div>
           </CardContent>
@@ -298,18 +360,24 @@ export function CreateBookingForm() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !formData.checkIn && "text-muted-foreground",
+                        !formData.checkIn && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.checkIn ? format(formData.checkIn, "dd MMMM yyyy", { locale: ru }) : "Выберите дату"}
+                      {formData.checkIn
+                        ? format(formData.checkIn, "dd MMMM yyyy", {
+                            locale: ru,
+                          })
+                        : "Выберите дату"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.checkIn}
-                      onSelect={(date) => setFormData((prev) => ({ ...prev, checkIn: date }))}
+                      onSelect={(date) =>
+                        setFormData((prev) => ({ ...prev, checkIn: date }))
+                      }
                       disabled={(date) => date < new Date()}
                       initialFocus
                     />
@@ -324,19 +392,27 @@ export function CreateBookingForm() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !formData.checkOut && "text-muted-foreground",
+                        !formData.checkOut && "text-muted-foreground"
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.checkOut ? format(formData.checkOut, "dd MMMM yyyy", { locale: ru }) : "Выберите дату"}
+                      {formData.checkOut
+                        ? format(formData.checkOut, "dd MMMM yyyy", {
+                            locale: ru,
+                          })
+                        : "Выберите дату"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
                       selected={formData.checkOut}
-                      onSelect={(date) => setFormData((prev) => ({ ...prev, checkOut: date }))}
-                      disabled={(date) => date <= (formData.checkIn || new Date())}
+                      onSelect={(date) =>
+                        setFormData((prev) => ({ ...prev, checkOut: date }))
+                      }
+                      disabled={(date) =>
+                        date <= (formData.checkIn || new Date())
+                      }
                       initialFocus
                     />
                   </PopoverContent>
@@ -361,24 +437,40 @@ export function CreateBookingForm() {
                   key={room.id}
                   className={cn(
                     "cursor-pointer transition-all hover:shadow-md",
-                    formData.roomId === room.id ? "ring-2 ring-primary bg-primary/5" : "",
+                    formData.roomId === room.id
+                      ? "ring-2 ring-primary bg-primary/5"
+                      : ""
                   )}
-                  onClick={() => setFormData((prev) => ({ ...prev, roomId: room.id, selectedBunkIds: [] }))}
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      roomId: room.id,
+                      selectedBunkIds: [],
+                    }))
+                  }
                 >
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <h3 className="font-semibold">{room.title}</h3>
-                      <p className="text-sm text-muted-foreground">{room.description}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {room.description}
+                      </p>
                       <div className="flex items-center gap-4 text-sm">
                         <span className="flex items-center gap-1">
                           <Bed className="h-4 w-4" />
                           {room.capacity} коек
                         </span>
-                        <span className="font-semibold text-primary">{formatPrice(room.price)}/ночь</span>
+                        <span className="font-semibold text-primary">
+                          {formatPrice(room.price)}/ночь
+                        </span>
                       </div>
                       <div className="flex flex-wrap gap-1">
                         {room.amenities.map((amenity) => (
-                          <Badge key={amenity} variant="secondary" className="text-xs">
+                          <Badge
+                            key={amenity}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             {amenity}
                           </Badge>
                         ))}
@@ -402,7 +494,8 @@ export function CreateBookingForm() {
               </CardTitle>
               {selectedRoom && (
                 <p className="text-sm text-muted-foreground">
-                  {selectedRoom.title} • Доступно: {availableBunksCount} из {availableBunks.length} коек
+                  {selectedRoom.title} • Доступно: {availableBunksCount} из{" "}
+                  {availableBunks.length} коек
                 </p>
               )}
             </CardHeader>
@@ -420,18 +513,23 @@ export function CreateBookingForm() {
                       className={cn(
                         "cursor-pointer transition-all",
                         !bunk.available && "opacity-50 cursor-not-allowed",
-                        bunk.available && formData.selectedBunkIds.includes(bunk.id)
+                        bunk.available &&
+                          formData.selectedBunkIds.includes(bunk.id)
                           ? "ring-2 ring-primary bg-primary/5"
                           : bunk.available
-                            ? "hover:shadow-md"
-                            : "",
+                          ? "hover:shadow-md"
+                          : ""
                       )}
                       onClick={() => {
                         if (!bunk.available) return
                         setFormData((prev) => ({
                           ...prev,
-                          selectedBunkIds: prev.selectedBunkIds.includes(bunk.id)
-                            ? prev.selectedBunkIds.filter((id) => id !== bunk.id)
+                          selectedBunkIds: prev.selectedBunkIds.includes(
+                            bunk.id
+                          )
+                            ? prev.selectedBunkIds.filter(
+                                (id) => id !== bunk.id
+                              )
                             : [...prev.selectedBunkIds, bunk.id],
                         }))
                       }}
@@ -446,12 +544,17 @@ export function CreateBookingForm() {
                             )}
                           </div>
                           <div>
-                            <div className="font-semibold">Койка {bunk.number}</div>
+                            <div className="font-semibold">
+                              Койка {bunk.number}
+                            </div>
                             <div className="text-xs text-muted-foreground">
                               {bunk.tier === "BOTTOM" ? "Нижняя" : "Верхняя"}
                             </div>
                           </div>
-                          <Badge variant={bunk.available ? "default" : "destructive"} className="text-xs">
+                          <Badge
+                            variant={bunk.available ? "default" : "destructive"}
+                            className="text-xs"
+                          >
                             {bunk.available ? "Доступна" : "Занята"}
                           </Badge>
                         </div>
@@ -470,7 +573,9 @@ export function CreateBookingForm() {
             <CardContent className="pt-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-green-800 font-semibold">Стоимость проживания:</span>
+                  <span className="text-green-800 font-semibold">
+                    Стоимость проживания:
+                  </span>
                   <div className="text-right">
                     {priceCalculation.discountAmount > 0 && (
                       <div className="text-sm text-gray-500 line-through">
@@ -485,7 +590,9 @@ export function CreateBookingForm() {
 
                 {priceCalculation.discountAmount > 0 && (
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-green-700">Скидка ({priceCalculation.discountPercentage}%):</span>
+                    <span className="text-green-700">
+                      Скидка ({priceCalculation.discountPercentage}%):
+                    </span>
                     <span className="font-semibold text-green-600">
                       -{formatPrice(priceCalculation.discountAmount)}
                     </span>
@@ -493,11 +600,17 @@ export function CreateBookingForm() {
                 )}
 
                 <div className="text-xs text-green-700 pt-2 border-t border-green-200">
-                  {formData.selectedBunkIds.length} койка(и) • {formData.guests} гост(я/ей)
+                  {formData.selectedBunkIds.length} койка(и) • {formData.guests}{" "}
+                  гост(я/ей)
                   {formData.checkIn && formData.checkOut && (
                     <span>
                       {" "}
-                      • {Math.ceil((formData.checkOut.getTime() - formData.checkIn.getTime()) / (1000 * 60 * 60 * 24))}{" "}
+                      •{" "}
+                      {Math.ceil(
+                        (formData.checkOut.getTime() -
+                          formData.checkIn.getTime()) /
+                          (1000 * 60 * 60 * 24)
+                      )}{" "}
                       ночь(ей)
                     </span>
                   )}
@@ -516,7 +629,9 @@ export function CreateBookingForm() {
             <Textarea
               placeholder="Дополнительные пожелания или комментарии..."
               value={formData.comments}
-              onChange={(e) => setFormData((prev) => ({ ...prev, comments: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, comments: e.target.value }))
+              }
               rows={3}
             />
           </CardContent>
@@ -526,13 +641,21 @@ export function CreateBookingForm() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            disabled={loading || !formData.roomId || formData.selectedBunkIds.length === 0}
+            disabled={
+              loading ||
+              !formData.roomId ||
+              formData.selectedBunkIds.length === 0
+            }
             className="flex-1"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Создать бронирование
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.push("/bookings")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/bookings")}
+          >
             Отмена
           </Button>
         </div>

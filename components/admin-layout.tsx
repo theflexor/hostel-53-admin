@@ -4,18 +4,26 @@ import type React from "react"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Calendar, Users, BarChart3, Menu, X, Plus } from "lucide-react"
+import {
+  Calendar,
+  Users,
+  BarChart3,
+  Menu,
+  X,
+  Plus,
+  LogOut,
+  User,
+} from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-
-const linkUrl = "/hostel-admin/"
+import { useAuth } from "@/components/auth-provider"
 
 const navigation = [
-  { name: "Обзор и отчеты", href: linkUrl, icon: BarChart3 },
-  { name: "Бронирования", href: linkUrl + "/bookings", icon: Users },
-  { name: "Календарь", href: linkUrl + "/calendar", icon: Calendar },
-  { name: "Создать бронь", href: linkUrl + "/create-booking", icon: Plus },
+  { name: "Обзор и отчеты", href: "/", icon: BarChart3 },
+  { name: "Бронирования", href: "/bookings", icon: Users },
+  { name: "Календарь", href: "/calendar", icon: Calendar },
+  { name: "Создать бронь", href: "/create-booking", icon: Plus },
 ]
 
 interface AdminLayoutProps {
@@ -25,6 +33,7 @@ interface AdminLayoutProps {
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const { username, logout } = useAuth()
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,6 +90,22 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             })}
           </ul>
         </nav>
+
+        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 px-3 py-2 text-sm text-sidebar-foreground">
+            <User className="h-4 w-4" />
+            <span className="flex-1 truncate">{username}</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={logout}
+              className="h-8 w-8 p-0 hover:bg-destructive hover:text-destructive-foreground"
+              title="Выйти"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Main content */}
@@ -98,13 +123,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
           <div className="flex-1" />
 
-          <div className="text-sm text-muted-foreground">
-            {new Date().toLocaleDateString("ru-RU", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:block text-sm text-muted-foreground">
+              {new Date().toLocaleDateString("ru-RU", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </div>
+            <div className="lg:hidden flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{username}</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="h-8 w-8 p-0"
+                title="Выйти"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 

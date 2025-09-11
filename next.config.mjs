@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  assetPrefix: "/hostel-admin/",
+  // assetPrefix: "/hostel-admin/",
   eslint: {
     ignoreDuringBuilds: true,
   },
