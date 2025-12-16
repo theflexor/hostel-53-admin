@@ -129,20 +129,15 @@ export function BookingsTable() {
     setCancelDialog((prev) => ({ ...prev, loading: true }))
 
     try {
-      await HostelAPI.updateBooking(cancelDialog.booking.id, {
-        ...cancelDialog.booking,
-        status: "cancelled",
-      })
+      await HostelAPI.cancelBooking(cancelDialog.booking.id)
 
-      setBookings((prev) =>
-        prev.map((booking) =>
-          booking.id === cancelDialog.booking?.id ? { ...booking, status: "cancelled" } : booking,
-        ),
-      )
+      // Remove cancelled booking from the list
+      setBookings((prev) => prev.filter((booking) => booking.id !== cancelDialog.booking?.id))
 
       setCancelDialog({ open: false, booking: null, loading: false })
     } catch (err) {
       console.error("Failed to cancel booking:", err)
+      alert("Не удалось отменить бронирование. Проверьте авторизацию.")
       setCancelDialog((prev) => ({ ...prev, loading: false }))
     }
   }

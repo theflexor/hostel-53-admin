@@ -206,7 +206,7 @@ export function CreateBookingForm() {
 
     setLoading(true)
     try {
-      const bookingData = {
+      const bookingData: any = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -215,10 +215,25 @@ export function CreateBookingForm() {
         roomId: formData.roomId,
         startTime: formData.checkIn.toISOString(),
         endTime: formData.checkOut.toISOString(),
-        comments: formData.comments,
         bunkIds: formData.selectedBunkIds,
+        bookingSource: "RECEPTION" as const, // Admin creates bookings from reception
       }
 
+      // Only add comments if not empty
+      if (formData.comments && formData.comments.trim()) {
+        bookingData.comments = formData.comments
+      }
+
+      // Include price calculation if available
+      if (priceCalculation) {
+        bookingData.originalPrice = priceCalculation.originalPrice
+        bookingData.discountedPrice = priceCalculation.discountedPrice
+        bookingData.discountAmount = priceCalculation.discountAmount
+        bookingData.discountPercentage = priceCalculation.discountPercentage
+        bookingData.price = priceCalculation.discountedPrice
+      }
+
+      console.log("📤 Sending booking data:", JSON.stringify(bookingData, null, 2))
       await apiService.createBooking(bookingData)
 
       toast({
@@ -227,11 +242,26 @@ export function CreateBookingForm() {
       })
 
       router.push("/bookings")
-    } catch (error) {
-      console.error("Failed to create booking:", error)
+    } catch (error: any) {
+      console.error("❌ Failed to create booking:", error)
+      console.error("Error details:", error.message, error.response)
+
+      let errorMessage = "Не удалось создать бронирование"
+
+      // Try to extract error details from API response
+      if (error.response) {
+        try {
+          const errorData = await error.response.json()
+          errorMessage = errorData.message || errorData.error || errorMessage
+          console.error("📛 API Error Response:", errorData)
+        } catch (e) {
+          console.error("Could not parse error response")
+        }
+      }
+
       toast({
         title: "Ошибка",
-        description: "Не удалось создать бронирование",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -351,9 +381,27 @@ export function CreateBookingForm() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Info message about check-in/out times */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="text-sm text-blue-800">
+                  <p className="font-medium">Время заезда и выезда:</p>
+                  <ul className="mt-1 space-y-1">
+                    <li>• Заезд: с 14:00</li>
+                    <li>• Выезд: до 12:00</li>
+                  </ul>
+                  <p className="mt-2 text-xs text-blue-700">
+                    В день выезда койка освобождается до 12:00 и может быть забронирована
+                    для нового гостя с того же дня
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label>Дата заезда *</Label>
+                <Label>Дата заезда (с 14:00) *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -385,7 +433,7 @@ export function CreateBookingForm() {
                 </Popover>
               </div>
               <div>
-                <Label>Дата выезда *</Label>
+                <Label>Дата выезда (до 12:00) *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button

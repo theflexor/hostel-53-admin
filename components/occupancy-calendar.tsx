@@ -185,11 +185,34 @@ export function OccupancyCalendar() {
     return roomBunks.filter((rb) => rb.roomId === selectedRoomId)
   }, [roomBunks, selectedRoomId])
 
-  const bookingLookupMap = useMemo(() => {
+  // Optimized: Create lookup maps for O(1) access
+  const bookingsByBunkAndDate = useMemo(() => {
     const map = new Map<string, Booking>()
     bookings.forEach((booking) => {
       if (booking.status === "confirmed" || booking.status === "checked_in") {
-        const key = `${booking.bunk_id}-${booking.check_in_date}-${booking.check_out_date}`
+        // Create entries for each date in the booking range
+        const startDate = new Date(booking.check_in_date)
+        const endDate = new Date(booking.check_out_date)
+
+        for (
+          let d = new Date(startDate);
+          d < endDate;
+          d.setDate(d.getDate() + 1)
+        ) {
+          const dateStr = d.toISOString().split("T")[0]
+          const key = `${booking.bunk_id}-${dateStr}`
+          map.set(key, booking)
+        }
+      }
+    })
+    return map
+  }, [bookings])
+
+  const checkoutsByBunkAndDate = useMemo(() => {
+    const map = new Map<string, Booking>()
+    bookings.forEach((booking) => {
+      if (booking.status === "confirmed" || booking.status === "checked_in") {
+        const key = `${booking.bunk_id}-${booking.check_out_date}`
         map.set(key, booking)
       }
     })
@@ -197,49 +220,6 @@ export function OccupancyCalendar() {
   }, [bookings])
 
   const getBookingBlocks = useMemo(() => {
-    const blocks: BookingBlock[] = []
-    const processedBookings = new Set<string>()
-
-    for (const roomBunk of filteredRoomBunks) {
-      const roomBookings = bookings.filter(
-        (b) =>
-          b.bunk_id === roomBunk.bunkId &&
-          (b.status === "confirmed" || b.status === "checked_in")
-      )
-
-      for (const booking of roomBookings) {
-        const bookingKey = `${booking.id}-${booking.bunk_id}`
-        if (processedBookings.has(bookingKey)) continue
-        processedBookings.add(bookingKey)
-
-        const startIndex = dates.findIndex(
-          (date) => date >= booking.check_in_date
-        )
-        const endIndex = dates.findIndex(
-          (date) => date >= booking.check_out_date
-        )
-
-        if (startIndex !== -1) {
-          const span =
-            endIndex !== -1 ? endIndex - startIndex : dates.length - startIndex
-          if (span > 0) {
-            blocks.push({
-              booking,
-              startDate: booking.check_in_date,
-              endDate: booking.check_out_date,
-              startIndex,
-              span,
-              roomBunk,
-            })
-          }
-        }
-      }
-    }
-
-    return blocks
-  }, [bookings, filteredRoomBunks, dates])
-
-  const getMergedBookingBlocks = useMemo(() => {
     const blocks: BookingBlock[] = []
     const processedBookings = new Set<string>()
 
@@ -291,31 +271,20 @@ export function OccupancyCalendar() {
 
   const getCellData = useCallback(
     (date: string, roomBunk: RoomBunk): CellData => {
-      const booking = bookings.find(
-        (b) =>
-          b.bunk_id === roomBunk.bunkId &&
-          (b.status === "confirmed" || b.status === "checked_in") &&
-          date >= b.check_in_date &&
-          date < b.check_out_date
-      )
+      // Optimized: O(1) lookup instead of O(n) find
+      const key = `${roomBunk.bunkId}-${date}`
+      const booking = bookingsByBunkAndDate.get(key)
 
       let status: "available" | "occupied" | "soon-available" = "available"
 
       if (booking) {
         status = "occupied"
       } else {
-        const tomorrow = new Date(date)
-        tomorrow.setDate(tomorrow.getDate() + 1)
-        const tomorrowStr = tomorrow.toISOString().split("T")[0]
+        // Check if someone is checking out today (before 12:00)
+        // This means the bed will be available for new booking from 14:00 same day
+        const checkoutToday = checkoutsByBunkAndDate.get(key)
 
-        const checkoutTomorrow = bookings.find(
-          (b) =>
-            b.bunk_id === roomBunk.bunkId &&
-            (b.status === "confirmed" || b.status === "checked_in") &&
-            b.check_out_date === tomorrowStr
-        )
-
-        if (checkoutTomorrow) {
+        if (checkoutToday) {
           status = "soon-available"
         }
       }
@@ -327,19 +296,15 @@ export function OccupancyCalendar() {
         status,
       }
     },
-    [bookings]
+    [bookingsByBunkAndDate, checkoutsByBunkAndDate]
   )
 
-  const roomBlocksMap = useMemo(() => {
-    const map = new Map<string, BookingBlock[]>()
-    filteredRoomBunks.forEach((roomBunk) => {
-      const blocks = getBookingBlocks.filter(
-        (block) => block.roomBunk.bunkId === roomBunk.bunkId
-      )
-      map.set(roomBunk.bunkId, blocks)
-    })
-    return map
-  }, [getBookingBlocks, filteredRoomBunks])
+  // State for cancel booking dialog
+  const [cancelDialog, setCancelDialog] = useState<{
+    open: boolean
+    booking: Booking | null
+    loading: boolean
+  }>({ open: false, booking: null, loading: false })
 
   const handleCellClick = (cellData: CellData) => {
     setSelectedCell(cellData)
@@ -421,7 +386,7 @@ export function OccupancyCalendar() {
       case "occupied":
         return "bg-blue-100 hover:bg-blue-200 border-blue-300 text-blue-900 shadow-sm hover:shadow-md"
       case "soon-available":
-        return "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 shadow-sm hover:shadow-md border-t-4 border-t-blue-500"
+        return "bg-orange-50 hover:bg-orange-100 border-orange-300 text-orange-900 shadow-sm hover:shadow-md border-l-4 border-l-orange-500"
       default:
         return "bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700 shadow-sm hover:shadow-md"
     }
@@ -436,7 +401,7 @@ export function OccupancyCalendar() {
       case "occupied":
         return "Занято"
       case "soon-available":
-        return "Скоро освобождается"
+        return "Освобождается сегодня (до 12:00)"
       default:
         return "Неизвестно"
     }
@@ -589,6 +554,10 @@ export function OccupancyCalendar() {
         comments: bookingFormData.comment,
         bunkIds: [selectedCell.roomBunk.bunkId],
         price: priceCalculation?.discountedPrice || 0,
+        discountPercentage: priceCalculation?.discountPercentage || 0,
+        discountAmount: priceCalculation?.discountAmount || 0,
+        originalPrice: priceCalculation?.originalPrice || 0,
+        discountedPrice: priceCalculation?.discountedPrice || 0,
       }
 
       await apiService.createBooking(bookingData)
@@ -612,6 +581,23 @@ export function OccupancyCalendar() {
       })
     } finally {
       setIsSubmittingBooking(false)
+    }
+  }
+
+  const handleCancelBooking = async () => {
+    if (!cancelDialog.booking) return
+
+    setCancelDialog((prev) => ({ ...prev, loading: true }))
+    try {
+      await apiService.cancelBooking(cancelDialog.booking.id)
+      await loadData()
+      setCancelDialog({ open: false, booking: null, loading: false })
+      setIsDialogOpen(false)
+      setSelectedCell(null)
+    } catch (error) {
+      console.error("Error cancelling booking:", error)
+      alert("Не удалось отменить бронирование. Попробуйте еще раз.")
+      setCancelDialog((prev) => ({ ...prev, loading: false }))
     }
   }
 
@@ -819,18 +805,28 @@ export function OccupancyCalendar() {
             <div className="overflow-auto">
               <div className="min-w-[800px]">
                 {/* Legend */}
-                <div className="flex items-center gap-6 p-4 border-b bg-slate-50">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-white border border-slate-300 rounded shadow-sm"></div>
-                    <span className="text-sm">Свободно</span>
+                <div className="p-4 border-b bg-slate-50 space-y-3">
+                  <div className="flex items-center gap-6 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-white border border-slate-300 rounded shadow-sm"></div>
+                      <span className="text-sm">Свободно</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded shadow-sm"></div>
+                      <span className="text-sm">Занято</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-orange-50 border border-orange-300 border-l-4 border-l-orange-500 rounded shadow-sm"></div>
+                      <span className="text-sm">Выезд сегодня (до 12:00)</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-blue-100 border border-blue-300 rounded shadow-sm"></div>
-                    <span className="text-sm">Занято</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-slate-100 border border-slate-300 border-t-4 border-t-blue-500 rounded shadow-sm"></div>
-                    <span className="text-sm">Скоро освободится</span>
+                  <div className="text-xs text-slate-600 bg-blue-50 border border-blue-200 rounded p-2">
+                    💡{" "}
+                    <span className="font-medium">
+                      Заезд с 14:00, выезд до 12:00.
+                    </span>{" "}
+                    Койка освобождается в день выезда и может быть забронирована
+                    для нового гостя с того же дня.
                   </div>
                 </div>
 
@@ -945,7 +941,7 @@ export function OccupancyCalendar() {
                             )
                           })}
 
-                          {getMergedBookingBlocks
+                          {getBookingBlocks
                             .filter(
                               (block) =>
                                 block.roomBunk.bunkId === roomBunk.bunkId

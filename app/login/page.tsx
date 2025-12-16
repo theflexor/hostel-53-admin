@@ -14,26 +14,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
-
-const hashPassword = (password: string): string => {
-  // Simple hash function for demo purposes
-  let hash = 0
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i)
-    hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return hash.toString()
-}
-
-const ADMIN_PASSWORD_HASH = hashPassword("111111") // -1805663928
+import { useAuth } from "@/components/auth-provider"
 
 export default function LoginPage() {
-  const [loginData, setLoginData] = useState({ username: "", password: "" })
+  const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const router = useRouter()
+  const { login } = useAuth()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,31 +28,19 @@ export default function LoginPage() {
     setLoading(true)
 
     // Simple validation
-    if (!loginData.username || !loginData.password) {
+    if (!loginData.email || !loginData.password) {
       setError("Заполните все поля")
       setLoading(false)
       return
     }
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const hashedInputPassword = hashPassword(loginData.password)
-
-      if (
-        loginData.username === "admin" &&
-        hashedInputPassword === ADMIN_PASSWORD_HASH
-      ) {
-        localStorage.setItem("isAuthenticated", "true")
-        localStorage.setItem("username", "admin")
-        router.push("/")
-      } else {
-        setError("Неверный логин или пароль")
-        setLoginData((prev) => ({ ...prev, password: "" }))
-      }
+      await login(loginData.email, loginData.password)
+      // Navigation is handled by the auth provider
     } catch (err) {
-      setError("Ошибка входа")
+      console.error("Login error:", err)
+      setError("Неверный email или пароль")
+      setLoginData((prev) => ({ ...prev, password: "" }))
     } finally {
       setLoading(false)
     }
@@ -81,19 +56,20 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Логин</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="Введите логин"
-                value={loginData.username}
+                id="email"
+                // type="email"
+                placeholder="Введите email"
+                value={loginData.email}
                 onChange={(e) =>
                   setLoginData((prev) => ({
                     ...prev,
-                    username: e.target.value,
+                    email: e.target.value,
                   }))
                 }
                 disabled={loading}
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -110,6 +86,7 @@ export default function LoginPage() {
                   }))
                 }
                 disabled={loading}
+                autoComplete="current-password"
               />
             </div>
             {error && (

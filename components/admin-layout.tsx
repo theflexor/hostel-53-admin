@@ -13,6 +13,12 @@ import {
   Plus,
   LogOut,
   User,
+  Hotel,
+  Tag,
+  Sparkles,
+  Bed,
+  Star,
+  MessageSquare,
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,6 +30,12 @@ const navigation = [
   { name: "Бронирования", href: "/bookings", icon: Users },
   { name: "Календарь", href: "/calendar", icon: Calendar },
   { name: "Создать бронь", href: "/create-booking", icon: Plus },
+  { name: "Комнаты", href: "/rooms", icon: Hotel },
+  { name: "Категории", href: "/categories", icon: Tag },
+  { name: "Удобства", href: "/amenities", icon: Sparkles },
+  { name: "Койко-места", href: "/bunks", icon: Bed },
+  { name: "Отзывы", href: "/reviews", icon: Star },
+  { name: "Сообщения", href: "/contact-messages", icon: MessageSquare },
 ]
 
 interface AdminLayoutProps {
