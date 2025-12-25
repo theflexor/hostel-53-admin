@@ -39,10 +39,6 @@ jobs:
         run: yarn lint
         continue-on-error: true
 
-      # Если у вас есть тесты, раскомментируйте:
-      # - name: Run tests
-      #   run: yarn test
-
   # ====================
   # Build & Push Docker
   # ====================
@@ -85,7 +81,7 @@ jobs:
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
           platforms: linux/amd64
-          # 👇 ВАЖНО: Передаем переменные для сборки Next.js 👇
+          # Передаем API URL при сборке, чтобы он "запекся" в приложение
           build-args: |
             NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
 
@@ -113,9 +109,9 @@ jobs:
             # Перейти в директорию проекта
             cd ${{ secrets.DEPLOY_PATH || '/opt/hostel-admin' }}
 
-            # Создать docker-compose.yml если его нет
-            if [ ! -f docker-compose.yml ]; then
-              cat > docker-compose.yml << 'EOF'
+            # 1. Всегда перезаписываем docker-compose.yml правильной версией
+            # (Убрал проверку if file exists, чтобы обновить старый сломанный конфиг)
+            cat > docker-compose.yml << 'EOF'
             version: '3.8'
 
             services:
@@ -127,8 +123,9 @@ jobs:
                   - "3001:3000"
                 environment:
                   - NODE_ENV=production
-                env_file:
-                  - .env.production
+                  - PORT=3000
+                  - HOSTNAME=0.0.0.0
+                # УБРАЛ env_file, так как файла .env.production может не быть
                 networks:
                   - app-network
 
@@ -136,29 +133,21 @@ jobs:
               app-network:
                 driver: bridge
             EOF
-            fi
 
-            # Подтянуть последний образ
+            # 2. Логинимся в докер на сервере (на всякий случай, чтобы pull прошел точно)
+            echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+            # 3. Подтягиваем свежий образ
             docker pull ${{ env.DOCKER_IMAGE }}:latest
 
-            # Остановить и удалить старый контейнер
+            # 4. Перезапускаем контейнеры
             docker-compose down
-
-            # Запустить новый контейнер
             docker-compose up -d
 
-            # Очистить неиспользуемые образы
+            # 5. Очищаем мусор
             docker image prune -af
 
-            # Проверить статус
+            # 6. Проверяем статус
+            echo "Deployment finished. Checking status..."
+            sleep 5
             docker-compose ps
-            docker-compose logs --tail=50
-
-      - name: Notify deployment status
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            echo "✅ Deployment successful"
-          else
-            echo "❌ Deployment failed"
-          fi
