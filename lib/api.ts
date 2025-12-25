@@ -414,9 +414,7 @@ export class HostelAPI {
     return response.json()
   }
 
-  static async refreshToken(
-    data: RefreshTokenRequest
-  ): Promise<LoginResponse> {
+  static async refreshToken(data: RefreshTokenRequest): Promise<LoginResponse> {
     const response = await fetch(`${API_BASE_URL}/auth/refresh-token`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -649,9 +647,7 @@ export class HostelAPI {
     return response.json()
   }
 
-  static async createAmenity(
-    amenity: CreateAmenityDto
-  ): Promise<AmenityDto> {
+  static async createAmenity(amenity: CreateAmenityDto): Promise<AmenityDto> {
     const response = await fetch(`${API_BASE_URL}/amenities`, {
       method: "POST",
       headers: this.getAuthHeaders(),
@@ -695,24 +691,18 @@ export class HostelAPI {
     return response.json()
   }
 
-  static async uploadPictures(
-    roomId: number,
-    images: File[]
-  ): Promise<string> {
+  static async uploadPictures(roomId: number, images: File[]): Promise<string> {
     const formData = new FormData()
     images.forEach((image) => formData.append("images", image))
 
     const token = localStorage.getItem("accessToken")
-    const response = await fetch(
-      `${API_BASE_URL}/pictures/upload/${roomId}`,
-      {
-        method: "POST",
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formData,
-      }
-    )
+    const response = await fetch(`${API_BASE_URL}/pictures/upload/${roomId}`, {
+      method: "POST",
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    })
     if (!response.ok) throw new Error("Failed to upload pictures")
     return response.text()
   }
@@ -826,14 +816,21 @@ export class HostelAPI {
     legacy: LegacyAdminAnalyticsDashboardResponse,
     request: AnalyticsRequest
   ): AdminAnalyticsDashboardResponse {
-    const { summary, statusBreakdown, revenueTrend, bookingSources, roomPerformance } = legacy
+    const {
+      summary,
+      statusBreakdown,
+      revenueTrend,
+      bookingSources,
+      roomPerformance,
+    } = legacy
 
     // Calculate total days
     const startDate = new Date(request.startDate)
     const endDate = new Date(request.endDate)
-    const totalDays = Math.ceil(
-      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1
+    const totalDays =
+      Math.ceil(
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      ) + 1
 
     // Calculate confirmed bookings
     const confirmedBookings = summary.totalBookings - summary.cancelledBookings
@@ -841,9 +838,12 @@ export class HostelAPI {
     // Разделяем доход по статусам
     // BOOKED = ожидаемый доход (не оплачен)
     // ACTIVE + COMPLETED = подтвержденный доход (оплачен)
-    const bookedRevenue = statusBreakdown.find((s) => s.status === "BOOKED")?.totalRevenue || 0
-    const activeRevenue = statusBreakdown.find((s) => s.status === "ACTIVE")?.totalRevenue || 0
-    const completedRevenue = statusBreakdown.find((s) => s.status === "COMPLETED")?.totalRevenue || 0
+    const bookedRevenue =
+      statusBreakdown.find((s) => s.status === "BOOKED")?.totalRevenue || 0
+    const activeRevenue =
+      statusBreakdown.find((s) => s.status === "ACTIVE")?.totalRevenue || 0
+    const completedRevenue =
+      statusBreakdown.find((s) => s.status === "COMPLETED")?.totalRevenue || 0
     const confirmedRevenue = activeRevenue + completedRevenue
 
     // Transform to new structure
@@ -865,8 +865,10 @@ export class HostelAPI {
           total: summary.totalBookings,
           confirmed: confirmedBookings,
           cancelled: summary.cancelledBookings,
-          active: statusBreakdown.find((s) => s.status === "ACTIVE")?.count || 0,
-          completed: statusBreakdown.find((s) => s.status === "COMPLETED")?.count || 0,
+          active:
+            statusBreakdown.find((s) => s.status === "ACTIVE")?.count || 0,
+          completed:
+            statusBreakdown.find((s) => s.status === "COMPLETED")?.count || 0,
           cancellationRate: summary.cancellationRate,
         },
         guests: {
@@ -947,7 +949,7 @@ export class HostelAPI {
             revenue: room.revenueGenerated,
           })),
         averageLeadTime: 0, // Not available in legacy API
-        averageStayDuration: 0, // Not available in legacy API
+        averageStayDuration: 0,
       },
     }
   }
