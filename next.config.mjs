@@ -1,6 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -10,7 +9,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Enable standalone output for Docker
   output: "standalone",
 }
 
