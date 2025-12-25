@@ -1,0 +1,47 @@
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+
+interface AnimatedNumberProps {
+  value: number
+  duration?: number
+  formatFn?: (value: number) => string
+  className?: string
+}
+
+export function AnimatedNumber({
+  value,
+  duration = 1000,
+  formatFn = (v) => v.toLocaleString("ru-RU"),
+  className,
+}: AnimatedNumberProps) {
+  const [displayValue, setDisplayValue] = useState(0)
+  const previousValue = useRef(0)
+
+  useEffect(() => {
+    const startValue = previousValue.current
+    const endValue = value
+    const startTime = performance.now()
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+      const currentValue = startValue + (endValue - startValue) * easeOutQuart
+
+      setDisplayValue(Math.round(currentValue))
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      } else {
+        previousValue.current = endValue
+      }
+    }
+
+    requestAnimationFrame(animate)
+  }, [value, duration])
+
+  return <span className={className}>{formatFn(displayValue)}</span>
+}

@@ -1024,7 +1024,7 @@ export function OccupancyCalendar() {
                                     <div className="text-xs text-slate-500">
                                       Статус:{" "}
                                       {block.booking.status === "confirmed"
-                                        ? "Подтверждено"
+                                        ? "Ожидает подтверждения"
                                         : "Заселен"}
                                     </div>
                                   </div>
@@ -1150,7 +1150,7 @@ export function OccupancyCalendar() {
                         <div className="text-xs text-blue-600 mt-1">
                           Статус:{" "}
                           {selectedCell.booking.status === "confirmed"
-                            ? "Подтверждено"
+                            ? "Ожидает оплаты"
                             : "Заселен"}
                         </div>
                       </div>

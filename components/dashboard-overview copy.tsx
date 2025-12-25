@@ -240,12 +240,10 @@ export function DashboardOverview() {
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Подтвержденный доход"
+          title="Общий доход"
           value={summary.revenue.confirmed}
           suffix="сом"
-          subtitle={`Ожидаемый: ${Math.round(
-            summary.revenue.expected
-          ).toLocaleString("ru-RU")} сом | Средний чек: ${Math.round(
+          subtitle={`Средний чек: ${Math.round(
             summary.revenue.average
           ).toLocaleString("ru-RU")} сом`}
           icon={<DollarSign className="h-5 w-5 text-emerald-600" />}

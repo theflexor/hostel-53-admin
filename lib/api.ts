@@ -246,7 +246,8 @@ export interface LegacyAdminAnalyticsDashboardResponse {
 export interface SummaryStats {
   revenue: {
     total: number
-    confirmed: number
+    confirmed: number // Оплаченный доход (ACTIVE + COMPLETED)
+    expected: number // Ожидаемый доход (BOOKED)
     cancelled: number
     average: number
   }
@@ -280,7 +281,7 @@ export interface RevenueTrendItem {
 
 // Booking Status Breakdown
 export interface BookingStatusBreakdown {
-  status: "CONFIRMED" | "ACTIVE" | "COMPLETED" | "CANCELLED"
+  status: "BOOKED" | "ACTIVE" | "COMPLETED" | "CANCELLED"
   count: number
   revenue: number
   percentage: number
@@ -837,6 +838,14 @@ export class HostelAPI {
     // Calculate confirmed bookings
     const confirmedBookings = summary.totalBookings - summary.cancelledBookings
 
+    // Разделяем доход по статусам
+    // BOOKED = ожидаемый доход (не оплачен)
+    // ACTIVE + COMPLETED = подтвержденный доход (оплачен)
+    const bookedRevenue = statusBreakdown.find((s) => s.status === "BOOKED")?.totalRevenue || 0
+    const activeRevenue = statusBreakdown.find((s) => s.status === "ACTIVE")?.totalRevenue || 0
+    const completedRevenue = statusBreakdown.find((s) => s.status === "COMPLETED")?.totalRevenue || 0
+    const confirmedRevenue = activeRevenue + completedRevenue
+
     // Transform to new structure
     return {
       period: {
@@ -847,7 +856,8 @@ export class HostelAPI {
       summary: {
         revenue: {
           total: summary.totalRevenue + summary.potentialLostRevenue,
-          confirmed: summary.totalRevenue,
+          confirmed: confirmedRevenue, // Оплаченный доход
+          expected: bookedRevenue, // Ожидаемый доход
           cancelled: summary.potentialLostRevenue,
           average: summary.averageBookingValue,
         },
@@ -884,7 +894,7 @@ export class HostelAPI {
       },
       breakdown: {
         byStatus: statusBreakdown.map((item) => ({
-          status: item.status === "BOOKED" ? "CONFIRMED" : item.status,
+          status: item.status,
           count: item.count,
           revenue: item.totalRevenue,
           percentage:

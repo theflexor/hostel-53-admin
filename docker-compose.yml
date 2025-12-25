@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  hostel-admin:
+    image: ${DOCKER_USERNAME}/hostel-admin:latest
+    container_name: hostel-admin
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env.production
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -48,28 +48,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthenticated])
 
   useEffect(() => {
-    // Check authentication status
-    const accessToken = localStorage.getItem("accessToken")
-    const refreshToken = localStorage.getItem("refreshToken")
-    const storedEmail = localStorage.getItem("userEmail")
-    const storedRole = localStorage.getItem("userRole") as "USER" | "ADMIN" | null
+    // Check authentication status and refresh token on page load
+    const initAuth = async () => {
+      const accessToken = localStorage.getItem("accessToken")
+      const refreshToken = localStorage.getItem("refreshToken")
+      const storedEmail = localStorage.getItem("userEmail")
+      const storedRole = localStorage.getItem("userRole") as "USER" | "ADMIN" | null
 
-    if (accessToken && refreshToken && storedEmail) {
-      setIsAuthenticated(true)
-      setUserEmail(storedEmail)
-      setUsername(storedEmail.split("@")[0]) // Extract username from email
-      setUserRole(storedRole)
-    } else {
-      setIsAuthenticated(false)
-      setUsername(null)
-      setUserEmail(null)
-      setUserRole(null)
-      if (pathname !== "/login") {
-        router.push("/login")
+      if (accessToken && refreshToken && storedEmail) {
+        // Try to refresh the token on page load to ensure it's valid
+        try {
+          const response = await HostelAPI.refreshToken({ token: refreshToken })
+          localStorage.setItem("accessToken", response.accessToken)
+          localStorage.setItem("refreshToken", response.refreshToken)
+
+          setIsAuthenticated(true)
+          setUserEmail(storedEmail)
+          setUsername(storedEmail.split("@")[0])
+          setUserRole(storedRole)
+        } catch (error) {
+          console.error("Token refresh failed on page load:", error)
+          // Clear invalid tokens
+          localStorage.removeItem("accessToken")
+          localStorage.removeItem("refreshToken")
+          localStorage.removeItem("userEmail")
+          localStorage.removeItem("userRole")
+          setIsAuthenticated(false)
+          setUsername(null)
+          setUserEmail(null)
+          setUserRole(null)
+          if (pathname !== "/login") {
+            router.push("/login")
+          }
+        }
+      } else {
+        setIsAuthenticated(false)
+        setUsername(null)
+        setUserEmail(null)
+        setUserRole(null)
+        if (pathname !== "/login") {
+          router.push("/login")
+        }
       }
+
+      setLoading(false)
     }
 
-    setLoading(false)
+    initAuth()
   }, [pathname, router])
 
   const login = async (email: string, password: string) => {
