@@ -1,5 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 
+console.log(API_BASE_URL)
+
 // Types based on OpenAPI schema
 export interface BookingDto {
   id?: number

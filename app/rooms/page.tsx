@@ -30,10 +30,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { HostelAPI, type RoomsDto, type CategoryDto, type AmenityDto, type PictureDto } from "@/lib/api"
-import { Plus, Pencil, Trash2, Loader2, Image as ImageIcon, Upload, X } from "lucide-react"
+import {
+  HostelAPI,
+  type RoomsDto,
+  type CategoryDto,
+  type AmenityDto,
+  type PictureDto,
+} from "@/lib/api"
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Loader2,
+  Image as ImageIcon,
+  Upload,
+  X,
+} from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
+import { env } from "process"
 
 interface RoomFormData {
   title: string
@@ -81,7 +96,13 @@ export default function RoomsPage() {
     pictures: PictureDto[]
     loading: boolean
     uploading: boolean
-  }>({ open: false, room: null, pictures: [], loading: false, uploading: false })
+  }>({
+    open: false,
+    room: null,
+    pictures: [],
+    loading: false,
+    uploading: false,
+  })
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
 
   useEffect(() => {
@@ -205,7 +226,13 @@ export default function RoomsPage() {
   }
 
   const openImagesDialog = async (room: RoomsDto) => {
-    setImagesDialog({ open: true, room, pictures: [], loading: true, uploading: false })
+    setImagesDialog({
+      open: true,
+      room,
+      pictures: [],
+      loading: true,
+      uploading: false,
+    })
     try {
       const pictures = await HostelAPI.getPicturesByRoom(room.id)
       setImagesDialog((prev) => ({ ...prev, pictures, loading: false }))
@@ -306,7 +333,10 @@ export default function RoomsPage() {
               <TableBody>
                 {rooms.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="text-center text-muted-foreground"
+                    >
                       Комнаты не найдены
                     </TableCell>
                   </TableRow>
@@ -314,12 +344,16 @@ export default function RoomsPage() {
                   rooms.map((room) => (
                     <TableRow key={room.id}>
                       <TableCell>{room.id}</TableCell>
-                      <TableCell className="font-medium">{room.title}</TableCell>
+                      <TableCell className="font-medium">
+                        {room.title}
+                      </TableCell>
                       <TableCell>{room.categoryName || "—"}</TableCell>
                       <TableCell>{room.capacity}</TableCell>
                       <TableCell>{room.beds}</TableCell>
                       <TableCell>{room.roomSize}</TableCell>
-                      <TableCell>{room.price ? `${room.price} сом` : "—"}</TableCell>
+                      <TableCell>
+                        {room.price ? `${room.price} сом` : "—"}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -341,7 +375,11 @@ export default function RoomsPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() =>
-                              setDeleteDialog({ open: true, room, loading: false })
+                              setDeleteDialog({
+                                open: true,
+                                room,
+                                loading: false,
+                              })
                             }
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
@@ -375,7 +413,10 @@ export default function RoomsPage() {
                     id="title"
                     value={formData.title}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, title: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        title: e.target.value,
+                      }))
                     }
                     required
                   />
@@ -386,7 +427,10 @@ export default function RoomsPage() {
                     id="description"
                     value={formData.description}
                     onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, description: e.target.value }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
                     }
                     required
                   />
@@ -440,7 +484,10 @@ export default function RoomsPage() {
                   <Select
                     value={formData.categoryId?.toString() || ""}
                     onValueChange={(value) =>
-                      setFormData((prev) => ({ ...prev, categoryId: parseInt(value) }))
+                      setFormData((prev) => ({
+                        ...prev,
+                        categoryId: parseInt(value),
+                      }))
                     }
                   >
                     <SelectTrigger>
@@ -459,11 +506,18 @@ export default function RoomsPage() {
                   <Label>Удобства</Label>
                   <div className="border rounded-lg p-4 space-y-2 max-h-40 overflow-y-auto">
                     {amenities.map((amenity) => (
-                      <div key={amenity.amenityId} className="flex items-center space-x-2">
+                      <div
+                        key={amenity.amenityId}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={`amenity-${amenity.amenityId}`}
-                          checked={formData.amenityIds.includes(amenity.amenityId)}
-                          onCheckedChange={() => toggleAmenity(amenity.amenityId)}
+                          checked={formData.amenityIds.includes(
+                            amenity.amenityId
+                          )}
+                          onCheckedChange={() =>
+                            toggleAmenity(amenity.amenityId)
+                          }
                         />
                         <label
                           htmlFor={`amenity-${amenity.amenityId}`}
@@ -512,14 +566,16 @@ export default function RoomsPage() {
             <DialogHeader>
               <DialogTitle>Удалить комнату?</DialogTitle>
               <DialogDescription>
-                Вы уверены, что хотите удалить комнату "{deleteDialog.room?.title}"?
-                Это действие нельзя отменить.
+                Вы уверены, что хотите удалить комнату "
+                {deleteDialog.room?.title}"? Это действие нельзя отменить.
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
               <Button
                 variant="outline"
-                onClick={() => setDeleteDialog({ open: false, room: null, loading: false })}
+                onClick={() =>
+                  setDeleteDialog({ open: false, room: null, loading: false })
+                }
                 disabled={deleteDialog.loading}
               >
                 Отмена
@@ -547,14 +603,22 @@ export default function RoomsPage() {
           open={imagesDialog.open}
           onOpenChange={(open) => {
             if (!imagesDialog.loading && !imagesDialog.uploading) {
-              setImagesDialog({ open, room: null, pictures: [], loading: false, uploading: false })
+              setImagesDialog({
+                open,
+                room: null,
+                pictures: [],
+                loading: false,
+                uploading: false,
+              })
               setSelectedFiles([])
             }
           }}
         >
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Управление изображениями - {imagesDialog.room?.title}</DialogTitle>
+              <DialogTitle>
+                Управление изображениями - {imagesDialog.room?.title}
+              </DialogTitle>
               <DialogDescription>
                 Загрузка и управление изображениями комнаты
               </DialogDescription>
@@ -574,7 +638,9 @@ export default function RoomsPage() {
                   />
                   <Button
                     onClick={handleUploadImages}
-                    disabled={selectedFiles.length === 0 || imagesDialog.uploading}
+                    disabled={
+                      selectedFiles.length === 0 || imagesDialog.uploading
+                    }
                   >
                     {imagesDialog.uploading ? (
                       <>
@@ -615,7 +681,10 @@ export default function RoomsPage() {
                         className="relative group border rounded-lg overflow-hidden aspect-square"
                       >
                         <img
-                          src={picture.url}
+                          src={
+                            process.env.NEXT_PUBLIC_STATIC_ASSETS_URL +
+                            picture.url
+                          }
                           alt={`Room ${imagesDialog.room?.title}`}
                           className="w-full h-full object-cover"
                         />
@@ -641,7 +710,13 @@ export default function RoomsPage() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  setImagesDialog({ open: false, room: null, pictures: [], loading: false, uploading: false })
+                  setImagesDialog({
+                    open: false,
+                    room: null,
+                    pictures: [],
+                    loading: false,
+                    uploading: false,
+                  })
                   setSelectedFiles([])
                 }}
                 disabled={imagesDialog.loading || imagesDialog.uploading}
