@@ -62,23 +62,19 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          # Важно: передаем переменную DOCKER_IMAGE внутрь SSH сессии
           envs: DOCKER_IMAGE
           script: |
             set -e
 
-            # --- 1. Настройка переменных ---
+            # --- 1. Переменные ---
             TARGET_DIR="${{ secrets.DEPLOY_PATH || '/opt/hostel-admin' }}"
             IMAGE_NAME="${DOCKER_IMAGE}:latest"
 
-            echo "🚀 Starting deployment to $TARGET_DIR..."
-
-            # --- 2. Подготовка директории ---
+            # --- 2. Переход в папку ---
             mkdir -p "$TARGET_DIR"
             cd "$TARGET_DIR"
 
-            # --- 3. Генерация docker-compose.yml ---
-            # Мы используем EOF (без кавычек), чтобы переменная $IMAGE_NAME подставилась bash-ом
+            # --- 3. Создаем конфиг ---
             cat > docker-compose.yml <<EOF
             services:
               hostel-admin:
@@ -93,21 +89,15 @@ jobs:
                   - HOSTNAME=0.0.0.0
             EOF
 
-            # --- 4. Обновление образов ---
-            echo "🔐 Logging into DockerHub..."
+            # --- 4. Логин и Pull ---
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-            echo "📥 Pulling latest image..."
             docker pull "$IMAGE_NAME"
 
-            # --- 5. Очистка конфликтов (РЕШЕНИЕ ВАШЕЙ ПРОБЛЕМЫ) ---
-            # Удаляем контейнер hostel-admin, если он есть (даже если запущен не через compose)
-            echo "🧹 Cleaning up old containers..."
+            # --- 5. Удаление старого контейнера (чтобы не было конфликта имен) ---
             docker rm -f hostel-admin || true
 
             # --- 6. Запуск ---
-            echo "🔥 Starting services..."
-            # Проверка версии docker compose (v2 vs v1)
+            # Определяем правильную команду (docker compose v2 или docker-compose v1)
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
             else
@@ -116,17 +106,18 @@ jobs:
 
             $COMPOSE_CMD up -d --remove-orphans
 
-            # --- 7. Очистка мусора ---
+            # --- 7. Чистка ---
             docker image prune -af
 
-            # --- 8. Проверка здоровья ---
-            echo "🏥 Health check..."
+            # --- 8. Проверка (ИСПРАВЛЕНО) ---
+            echo "Waiting for container to stabilize..."
             sleep 5
 
-            if [ "\$(docker inspect -f '{{.State.Running}}' hostel-admin)" = "true" ]; then
-              echo "✅ Deployment successful! Container is running."
+            # Убрал обратный слэш перед $(...)
+            if [ "$(docker inspect -f '{{.State.Running}}' hostel-admin)" = "true" ]; then
+              echo "✅ Deployment successful!"
             else
-              echo "❌ Container crashed or failed to start."
+              echo "❌ Container failed to start. Logs:"
               docker logs --tail 50 hostel-admin
               exit 1
             fi
