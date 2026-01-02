@@ -42,8 +42,8 @@ jobs:
           # === ВАЖНО: Передаем переменные для Next.js во время сборки ===
           # Next.js "запекает" NEXT_PUBLIC_ переменные в билд.
           build-args: |
-            NEXT_PUBLIC_API_BASE_URL=https://hostel53bishkekkg.com/api/v1/
-            NEXT_PUBLIC_STATIC_ASSETS_URL=https://hostel53bishkekkg.com
+            NEXT_PUBLIC_API_BASE_URL=https://admin.hostel53bishkekkg.com/api/v1
+            NEXT_PUBLIC_STATIC_ASSETS_URL=https://admin.hostel53bishkekkg.com
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
