@@ -39,9 +39,11 @@ jobs:
           context: .
           push: true
           tags: ${{ env.DOCKER_IMAGE }}:latest
-          # Если нужны build-args для Next.js (раскомментируйте, если нужно запечь env)
-          # build-args: |
-          #   NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
+          # === ВАЖНО: Передаем переменные для Next.js во время сборки ===
+          # Next.js "запекает" NEXT_PUBLIC_ переменные в билд.
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://hostel53bishkekkg.com/api/v1/
+            NEXT_PUBLIC_STATIC_ASSETS_URL=https://hostel53bishkekkg.com
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
 
@@ -62,19 +64,23 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
+          # Передаем имя образа внутрь скрипта
           envs: DOCKER_IMAGE
           script: |
             set -e
 
-            # --- 1. Переменные ---
+            # --- 1. Настройка переменных ---
             TARGET_DIR="${{ secrets.DEPLOY_PATH || '/opt/hostel-admin' }}"
             IMAGE_NAME="${DOCKER_IMAGE}:latest"
 
-            # --- 2. Переход в папку ---
+            echo "🚀 Starting deployment..."
+
+            # --- 2. Подготовка директории ---
             mkdir -p "$TARGET_DIR"
             cd "$TARGET_DIR"
 
-            # --- 3. Создаем конфиг ---
+            # --- 3. Генерация docker-compose.yml ---
+            # Используем EOF без кавычек, чтобы $IMAGE_NAME подставился bash-ем
             cat > docker-compose.yml <<EOF
             services:
               hostel-admin:
@@ -89,33 +95,40 @@ jobs:
                   - HOSTNAME=0.0.0.0
             EOF
 
-            # --- 4. Логин и Pull ---
+            # --- 4. Обновление образов ---
+            echo "🔐 Logging into DockerHub..."
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            echo "📥 Pulling image..."
             docker pull "$IMAGE_NAME"
 
-            # --- 5. Удаление старого контейнера (чтобы не было конфликта имен) ---
+            # --- 5. Удаление старого контейнера (Решение конфликта имен) ---
+            # Удаляем любой контейнер с именем hostel-admin, даже если он запущен вручную
+            echo "🧹 Removing old container..."
             docker rm -f hostel-admin || true
 
             # --- 6. Запуск ---
-            # Определяем правильную команду (docker compose v2 или docker-compose v1)
+            echo "🔥 Starting services..."
+            # Проверка версии docker compose
             if docker compose version >/dev/null 2>&1; then
               COMPOSE_CMD="docker compose"
             else
               COMPOSE_CMD="docker-compose"
             fi
 
+            # --remove-orphans удалит лишние контейнеры, если они были
             $COMPOSE_CMD up -d --remove-orphans
 
-            # --- 7. Чистка ---
+            # --- 7. Очистка места ---
             docker image prune -af
 
-            # --- 8. Проверка (ИСПРАВЛЕНО) ---
-            echo "Waiting for container to stabilize..."
+            # --- 8. Проверка здоровья ---
+            echo "🏥 Checking health..."
             sleep 5
 
-            # Убрал обратный слэш перед $(...)
+            # Проверяем статус (true/false). Важно: без обратного слеша перед $
             if [ "$(docker inspect -f '{{.State.Running}}' hostel-admin)" = "true" ]; then
-              echo "✅ Deployment successful!"
+              echo "✅ Deployment successful! Container is running."
             else
               echo "❌ Container failed to start. Logs:"
               docker logs --tail 50 hostel-admin
